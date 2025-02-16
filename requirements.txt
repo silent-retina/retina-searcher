@@ -5,3 +5,4 @@ scholarly
 requests
 beautifulsoup4
 pymupdf
+google
