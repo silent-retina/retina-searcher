@@ -17,14 +17,9 @@ st.subheader("Relevant Studies")
 @st.cache_data  # Cache the search results
 def perform_search(keywords):
     try:
-        # Using search_keyword for keyword-based search (recommended for your use case)
-        search_query = scholarly.search_keywords(keywords)
-        results = list(search_query)[:5] # Limit results directly in the search
-
-        #If the search by keyword doesn't return anything, try to search by query
-        if not results:
-            search_query = scholarly.search_pubs(keywords)
-            results = list(search_query)[:5]
+        with st.spinner("Searching..."):
+        search_query = scholarly.search_pubs(keywords)
+        results = list(search_query)[:5]
 
         return results
     except Exception as e:
