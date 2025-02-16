@@ -18,8 +18,8 @@ st.subheader("Relevant Studies")
 def perform_search(keywords):
     try:
         with st.spinner("Searching..."):
-        search_query = scholarly.search_pubs(keywords)
-        results = list(search_query)[:5]
+            search_query = scholarly.search_pubs(keywords)
+            results = list(search_query)[:5]
 
         return results
     except Exception as e:
