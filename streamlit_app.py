@@ -18,7 +18,7 @@ if st.button("Search"):
         st.warning("Please enter keywords to search.")
     else:
         try:
-            search_query = scholarly.search_pubs_query(keywords)
+            search_query = scholarly.search_pubs(keywords)
             results = list(search_query)  # Convert generator to list
 
             if results:
