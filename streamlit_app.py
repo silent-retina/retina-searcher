@@ -1,58 +1,80 @@
 import streamlit as st
-import scholarly  # For Google Scholar searches
-import requests  # For fetching PDFs (if needed)
-from bs4 import BeautifulSoup # For parsing PDF content (if needed)
-import re # For cleaning text
+import scholarly
+import requests
+from bs4 import BeautifulSoup
+import re
+import fitz  # PyMuPDF
 
 st.title("Automated Ophthalmology Literature Search")
 
-# Patient Case Input (Simplified example)
+# Patient Case Input
 st.subheader("Patient Case Details")
 keywords = st.text_area("Enter keywords describing the patient case (e.g., macular degeneration, diabetic retinopathy, etc.)")
 
 # Google Scholar Search
 st.subheader("Relevant Studies")
 
+@st.cache_data  # Cache the search results
+def perform_search(keywords):
+    try:
+        # Using search_keyword for keyword-based search (recommended for your use case)
+        search_query = scholarly.search_keyword(keywords)
+        results = list(search_query)[:5] # Limit results directly in the search
+
+        #If the search by keyword doesn't return anything, try to search by query
+        if not results:
+            search_query = scholarly.search_pubs_query(keywords)
+            results = list(search_query)[:5]
+
+        return results
+    except Exception as e:
+        st.error(f"Error during search: {e}")
+        return []  # Return empty list in case of error
+
+
 if st.button("Search"):
     if not keywords:
         st.warning("Please enter keywords to search.")
     else:
-        try:
-            search_query = scholarly.search_pubs(keywords)
-            results = list(search_query)  # Convert generator to list
+        results = perform_search(keywords)
 
-            if results:
-                for i, result in enumerate(results[:5]): #limit to 5 results
-                    st.write(f"**{i+1}. {result.bib['title']}**")
-                    st.write(f"*Authors: {result.bib.get('author', 'N/A')}") # Handle cases where author is not available
-                    st.write(f"*Journal: {result.bib.get('journal', 'N/A')}")
-                    st.write(f"*Year: {result.bib.get('year', 'N/A')}")
+        if results:
+            for i, result in enumerate(results):
+                st.write(f"**{i+1}. {result['bib']['title']}**") # Access title like this now
+                st.write(f"*Authors: {result['bib'].get('author', 'N/A')}")
+                st.write(f"*Journal: {result['bib'].get('journal', 'N/A')}")
+                st.write(f"*Year: {result['bib'].get('year', 'N/A')}")
+
+                if 'pub_url' in result['bib']:  # Check if pub_url exists
+                    st.write(f"[Link to Paper]({result['bib']['pub_url']})")
+
+                    # PDF Download (Improved)
+                    if st.checkbox(f"Download PDF {i+1}"):
+                        try:
+                            response = requests.get(result['bib']['pub_url'], stream=True)
+                            response.raise_for_status()
+
+                            cd = response.headers.get('Content-Disposition')
+                            if cd:
+                                filename = re.findall('filename="([^"]*)"', cd)[0] if re.findall('filename="([^"]*)"', cd) else f"paper_{i+1}.pdf"
+                            else:
+                                filename = f"paper_{i+1}.pdf"
+
+                            with open(filename, "wb") as f:
+                                for chunk in response.iter_content(chunk_size=8192):
+                                    f.write(chunk)
+                            st.success(f"PDF {i+1} downloaded as {filename}!")
+                        except requests.exceptions.RequestException as e:
+                            st.error(f"Error downloading PDF: {e}")
+                        except Exception as e:
+                            st.error(f"Error processing PDF: {e}")
+
+                st.write("---")
+        else:
+            st.info("No results found.")
 
 
-                    # Link to the paper (if available)
-                    if 'pub_url' in result.bib:  # Check if pub_url exists
-                        st.write(f"[Link to Paper]({result.bib['pub_url']})")
-
-                    # PDF Download (If needed and if pub_url is available)
-                    # (This part is complex and might require additional libraries and handling of different PDF sources)
-                    # if 'pub_url' in result.bib:
-                    #     if st.checkbox(f"Download PDF {i+1}"):
-                    #         try:
-                    #             response = requests.get(result.bib['pub_url'])
-                    #             # ... (Handle different PDF content types and download logic)
-                    #             st.success(f"PDF {i+1} downloaded!")
-                    #         except Exception as e:
-                    #             st.error(f"Error downloading PDF: {e}")
-
-                    st.write("---")
-
-            else:
-                st.info("No results found.")
-
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-
-
+# ... (rest of the code for Further Reading and PDF Content Extraction as before)
 # Further Reading (Placeholder)
 st.subheader("Further Reading")
 st.write("This section could include links to relevant ophthalmology resources, databases, or other tools.")
@@ -60,22 +82,22 @@ st.write("This section could include links to relevant ophthalmology resources, 
 
 # PDF Content Extraction (Basic Example - Requires PDF parsing library)
 # (This is a complex task and would require a dedicated PDF parsing library like PyPDF2, PyMuPDF, or similar)
-# st.subheader("PDF Content Extraction (Experimental)")
-# uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
-# if uploaded_file is not None:
-#     try:
-#         # ... (PDF parsing logic using chosen library)
-#         # Example (using PyMuPDF - you'd need to install it: pip install pymupdf)
-#         import fitz # PyMuPDF
-#         doc = fitz.open(uploaded_file)
-#         text = ""
-#         for page in doc:
-#             text += page.get_text()
+st.subheader("PDF Content Extraction (Experimental)")
+uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
+if uploaded_file is not None:
+    try:
+        # ... (PDF parsing logic using chosen library)
+        # Example (using PyMuPDF - you'd need to install it: pip install pymupdf)
+        import fitz # PyMuPDF
+        doc = fitz.open(uploaded_file)
+        text = ""
+        for page in doc:
+            text += page.get_text()
 
-#         #Clean text from special characters
-#         cleaned_text = re.sub(r'[^\x00-\x7F]+', '', text) #remove non-ascii
+        #Clean text from special characters
+        cleaned_text = re.sub(r'[^\x00-\x7F]+', '', text) #remove non-ascii
 
-#         st.write(cleaned_text[:500] + "...") # Display a snippet
+        st.write(cleaned_text[:500] + "...") # Display a snippet
 
-#     except Exception as e:
-#         st.error(f"Error processing PDF: {e}")
+    except Exception as e:
+        st.error(f"Error processing PDF: {e}")
