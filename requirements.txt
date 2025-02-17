@@ -1,8 +1,5 @@
-streamlit
-google-generativeai
-google.ai.generativelanguage
-scholarly
-requests
-beautifulsoup4
-pymupdf
-google
+streamlit 
+pandas 
+requests 
+plotly 
+openpyxl
