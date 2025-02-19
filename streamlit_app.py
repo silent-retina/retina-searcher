@@ -21,7 +21,7 @@ class PubMedAPI:
         
         Generate a PubMed search query that will find relevant research articles. 
         Focus on key clinical features, possible diagnoses, and treatment approaches.
-        Use proper PubMed syntax with [MeSH Terms] and AND/OR operators.
+        Use proper PubMed syntax with [MeSH Terms] and OR operators.
         Return only the search query without any explanation.
         """
         
@@ -173,7 +173,7 @@ def main():
         st.stop()
     
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-    model = genai.GenerativeModel('gemini-pro')
+    model = genai.GenerativeModel('gemini-2.0-flash-exp')
     
     # Initialize PubMed API
     pubmed_api = PubMedAPI()
