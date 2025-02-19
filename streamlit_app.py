@@ -20,8 +20,8 @@ class PubMedAPI:
         Given this ophthalmology patient scenario: {patient_scenario}
         
         Generate a PubMed search query that will find relevant research articles. 
-        Focus on key clinical features, possible diagnoses, and treatment approaches.
-        Use proper PubMed syntax with [MeSH Terms] containing the diagnosis. Use only OR operators.
+        Focus on possible diagnoses, and treatment approaches.
+        Use proper PubMed syntax with [MeSH Terms]. Do not use AND operators.
         Return only the search query without any explanation.
         """
         
